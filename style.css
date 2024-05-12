@@ -8,9 +8,9 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-.expand-collapse-section,
-.example-content-below-sections {
-    transition: transform .7s ease-out;
+.expand-collapse-section.animating,
+.example-content-below-sections.animating {
+    animation: translateContentAnimation .7s linear forwards;
     will-change: transform;
 }
 
@@ -51,6 +51,7 @@ body {
     transform-origin: top left;
     overflow: hidden;
     will-change: transform;
+    perspective: 1px;
     margin-top: 0.5rem;
     border: 1px solid black;
     border-radius: 5px;
