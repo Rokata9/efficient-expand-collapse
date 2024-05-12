@@ -1,0 +1,107 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.expand-collapse-section,
+.example-content-below-sections {
+    transition: transform .7s ease-out;
+    will-change: transform;
+}
+
+.section-header {
+    border: 1px solid #efefef;
+    border-radius: 4px;
+    padding: 0.5em;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle-wrapper {
+    width: 36px;
+    height: 36px;
+    background: #f7f8f9;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle {
+    background-image: url('data:image/svg+xml,<svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23747878" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path></svg>');
+    display: inline-block;
+    height: 24px;
+    width: 24px;
+    transition: transform 200ms;
+}
+
+.toggle.expanded {
+    transform: rotateZ(180deg);
+}
+
+.content {
+    transform: scaleY(0);
+    transform-origin: top left;
+    overflow: hidden;
+    will-change: transform;
+    margin-top: 0.5rem;
+    border: 1px solid black;
+    border-radius: 5px;
+    /* padding: 1em; */
+    display: none;
+    overflow: hidden;
+}
+
+.content-inner {
+    transform-origin: top left;
+    overflow: hidden;
+    transform: scaleY(0);
+    will-change: transform;
+}
+
+/* need to be margin as with padding, transform makes it push to the top while animating collapse */
+.content-inner-spacer {
+    margin: 1em;
+}
+
+.item--expanded {
+    animation-name: expandAnimation;
+    animation-duration: .7s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.item__contents--expanded {
+    animation-name: expandContentsAnimation;
+    animation-duration: .7s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.item--collapsed {
+    animation-name: collapseAnimation;
+    animation-duration: .7s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.item__contents--collapsed {
+    animation-name: collapseContentsAnimation;
+    animation-duration: .7s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.notransition {
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -o-transition: none !important;
+    transition: none !important;
+}
