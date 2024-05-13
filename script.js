@@ -58,6 +58,16 @@ class Expando {
   }
 
   _applyAnimation(el, { expand } = opts) {
+    function setTranslation(el, { height, start, expand } = opts) {
+      const translation = start ? (expand ? -height : 0) : (expand ? 0 : -height);
+
+      if (translation === 0) {
+        el.removeAttribute("style");
+      } else {
+        el.style.transform = `translateY(${translation}px)`;
+      }
+    }
+
     const elInner = el.querySelector(".content-inner");
     el.classList.remove("item--expanded");
     el.classList.remove("item--collapsed");
@@ -69,7 +79,20 @@ class Expando {
     sectionContent.style.display = "block"; // block to expand, has no effect on collapse (in the end of animation it gets set to none)
     const index = this._sections.indexOf(sectionEl);
     const targetContentHeight = sectionContent.offsetHeight + this._contentTopMargin;
+
+    for (let i = index + 1; i < this._sections.length; i++) {
+      const curr = this._sections[i];
+      // don't animate yet translation of adjacent sections, just set initial value for animation
+      curr.classList.add("notransition"); 
+      
+      // setting section content to display block pushes the other items by its height as it has transform set, but it still occupies its original height
+      // initial value for animation
+      setTranslation(curr, { height: targetContentHeight, start: true, expand });
+    }
+    // the rest of the content below the expandable sections
     const lastSectionSibling = this._sections.slice(-1)[0].nextElementSibling;
+    lastSectionSibling.classList.add("notransition");
+    setTranslation(lastSectionSibling, { height: targetContentHeight, start: true, expand });
 
     requestAnimationFrame(() => {
       if (expand) {
@@ -80,54 +103,43 @@ class Expando {
         elInner.classList.add("item__contents--collapsed");
       }
 
-      const container = document.querySelector(".container");
-      container.style.setProperty("--height", `${targetContentHeight}px`);
+      sectionEl.offsetHeight; // needed for Firefox on expand
+
+      // sectionEl.offsetHeight; -> not needed in requestAnimationFrame
 
       for (let i = index + 1; i < this._sections.length; i++) {
         const curr = this._sections[i];
-        curr.classList.add("animating");
+
+        // trigger translation animation of adjacent sections and rest of the content now
+        curr.classList.remove("notransition");
+        setTranslation(curr, { height: targetContentHeight, start: false, expand });
+        sectionEl.offsetHeight; // needed for Firefox on expand
       }
-      lastSectionSibling.classList.add("animating");
+      lastSectionSibling.classList.remove("notransition");
+      setTranslation(lastSectionSibling, { height: targetContentHeight, start: false, expand });
 
-      if (expand) {
-        // For collapse animation -> use two set of classes for animation - animation-expand, animation-collapse
-        // Update CSS with the correctly generated animation name for each case
-        // Make sure to set display: none; on the content in end of animation
-
+      if (!expand) {
         sectionContent.addEventListener("animationend", () => {
-          container.removeAttribute("style");
-
+          sectionContent.style.display = "none";
+  
           for (let i = index + 1; i < this._sections.length; i++) {
             const curr = this._sections[i];
-            curr.classList.remove("animating"); 
+            // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
+            curr.classList.add("notransition"); 
+            // could also be set to translateY(0)
+            curr.removeAttribute("style"); 
+            // should force reflow here otherwise there will be no net change in notransition class which would animate transform, which we don't want,
+            // we're just removing the unnecessary style attribute
+            sectionEl.offsetHeight;
+            curr.classList.remove("notransition");
           }
 
-          lastSectionSibling.classList.remove("animating");
+          lastSectionSibling.classList.add("notransition");
+          lastSectionSibling.removeAttribute("style");
+          sectionEl.offsetHeight;
+          lastSectionSibling.classList.remove("notransition");
         }, { once: true });
       }
-
-      // if (!expand) {
-      //   sectionContent.addEventListener("animationend", () => {
-      //     sectionContent.style.display = "none";
-  
-      //     for (let i = index + 1; i < this._sections.length; i++) {
-      //       const curr = this._sections[i];
-      //       // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
-      //       curr.classList.add("notransition"); 
-      //       // could also be set to translateY(0)
-      //       curr.removeAttribute("style"); 
-      //       // should force reflow here otherwise there will be no net change in notransition class which would animate transform, which we don't want,
-      //       // we're just removing the unnecessary style attribute
-      //       sectionEl.offsetHeight;
-      //       curr.classList.remove("notransition");
-      //     }
-
-      //     lastSectionSibling.classList.add("notransition");
-      //     lastSectionSibling.removeAttribute("style");
-      //     sectionEl.offsetHeight;
-      //     lastSectionSibling.classList.remove("notransition");
-      //   }, { once: true });
-      // }
     });
   }
 
@@ -145,7 +157,6 @@ class Expando {
     const expandContentsAnimation = [];
     const collapseAnimation = [];
     const collapseContentsAnimation = [];
-    const translateDownAnimation = [];
     for (let i = 0; i <= 100; i++) {
       const step = this._ease(i / 100);
 
@@ -168,16 +179,6 @@ class Expando {
         outerAnimation: collapseAnimation,
         innerAnimation: collapseContentsAnimation,
       });
-
-      // Translation down
-      const translateStep = this._ease(i / 100);
-
-      this._appendTranslation({
-        i,
-        step: translateStep,
-        down: true,
-        animation: translateDownAnimation
-      });
     }
 
     ease.textContent = `
@@ -195,49 +196,15 @@ class Expando {
 
       @keyframes collapseContentsAnimation {
         ${collapseContentsAnimation.join("")}
-      }
-      
-      @keyframes translateContentAnimation {
-        ${translateDownAnimation.join("")}
       }`;
 
     document.head.appendChild(ease);
-
     return ease;
-  }
-
-  _appendTranslation({ i, step, animation, down} = opts) {
-    if (down) {
-      if (i === 100) {
-        animation.push(`
-          ${i}% {
-            transform: translateY(0);
-          }`);
-        return;
-      }
-
-      if (i === 0 || step === 0) {
-        // No - for collapse
-        animation.push(`
-          ${i}% {
-            transform: translateY(calc(-1 * var(--height)));
-          }`);
-        return;
-      }
-
-      // (1-step) should be without - in front for collapse
-      animation.push(`
-          ${i}% {
-            transform: translateY(calc(${-(1 - step)} * var(--height)));
-          }`);
-    }
   }
 
   _append({ i, step, start, end, outerAnimation, innerAnimation } = opts) {
     let scale = start + (end - start) * step;
     let invScale = scale === 0 ? 0 : 1 / scale;
-
-    console.log(`${i}: scale: ${scale}, inverse: ${invScale}, scale * inverse = ${scale * invScale}`);
 
     outerAnimation.push(`
       ${i}% {
