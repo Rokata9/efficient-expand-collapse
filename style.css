@@ -8,11 +8,27 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+:root {
+    --animation-time: .7s;
+}
+
 .expand-collapse-section,
 .example-content-below-sections {
-    transition: transform .7s cubic-bezier(.33,1.04,.48,.96);
     will-change: transform;
+}
+
+.expand-collapse-section.expanded,
+.example-content-below-sections.expanded {
+    transition: transform var(--animation-time) cubic-bezier(.17,1.02,.39,1);
     /* cubic-bezier(.35,1.2,.72,.93); */
+}
+
+.expand-collapse-section.collapsed,
+.example-content-below-sections.collapsed {
+    transition: transform var(--animation-time) cubic-bezier(.27,.86,.63,.91);
+    /* cubic-bezier(.35,1.2,.72,.93); */
+    /* collapse easing -> .24,.89,.58,1 / cubic-bezier(.27,.86,.59,.96) */
+    /* expand easing -> cubic-bezier(.17,1.02,.57,.99) / cubic-bezier(.17,1.02,.56,1) */
 }
 
 .section-header {
@@ -75,28 +91,28 @@ body {
 
 .item--expanded {
     animation-name: expandAnimation;
-    animation-duration: .7s;
+    animation-duration: var(--animation-time);
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
 
 .item__contents--expanded {
     animation-name: expandContentsAnimation;
-    animation-duration: .7s;
+    animation-duration: var(--animation-time);
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
 
 .item--collapsed {
     animation-name: collapseAnimation;
-    animation-duration: .7s;
+    animation-duration: var(--animation-time);
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
 
 .item__contents--collapsed {
     animation-name: collapseContentsAnimation;
-    animation-duration: .7s;
+    animation-duration: var(--animation-time);
     animation-timing-function: linear;
     animation-fill-mode: forwards;
 }
