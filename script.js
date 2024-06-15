@@ -68,6 +68,15 @@ class Expando {
       }
     }
 
+    function runWithoutTransition(el, elFunc) {
+      el.classList.add("notransition");
+      elFunc(el);
+      // should force reflow here otherwise there will be no net change in notransition class which would animate transform, which we don't want,
+      // we're just removing sthe unnecessary style attribute
+      el.offsetHeight;
+      el.classList.remove("notransition");
+    }
+
     const elInner = el.querySelector(".content-inner");
     el.classList.remove("item--expanded");
     el.classList.remove("item--collapsed");
@@ -83,26 +92,31 @@ class Expando {
 
     for (let i = index + 1; i < this._sections.length; i++) {
       const curr = this._sections[i];
-      // don't animate yet translation of adjacent sections, just set initial value for animation
-      curr.classList.add("notransition");
 
-      // setting section content to display block pushes the other items by its height as it has transform set, but it still occupies its original height
-      // initial value for animation
-      setTranslation(curr, {
+      // don't animate yet translation of adjacent sections, just set initial value for animation
+      runWithoutTransition(curr, (el) => {
+        // setting section content to display block pushes the other items by its height as it has transform set, but it still occupies its original height
+        // initial value for animation
+        setTranslation(el, {
+          height: targetContentHeight,
+          start: true,
+          expand,
+        });
+      });
+    }
+
+    // the rest of the content below the expandable sections
+    const lastSectionSibling = this._sections.slice(-1)[0].nextElementSibling;
+    runWithoutTransition(lastSectionSibling, (el) => {
+      setTranslation(el, {
         height: targetContentHeight,
         start: true,
         expand,
       });
-    }
-    // the rest of the content below the expandable sections
-    const lastSectionSibling = this._sections.slice(-1)[0].nextElementSibling;
-    lastSectionSibling.classList.add("notransition");
-    setTranslation(lastSectionSibling, {
-      height: targetContentHeight,
-      start: true,
-      expand,
     });
 
+    // without this it won't detect changes to transform, it'd be just 2 consecutive transfom changes,
+    // which doesn't trigger the animation, only jumps to final value
     requestAnimationFrame(() => {
       if (expand) {
         el.classList.add("item--expanded");
@@ -112,24 +126,18 @@ class Expando {
         elInner.classList.add("item__contents--collapsed");
       }
 
-      sectionEl.offsetHeight; // needed for Firefox on expand
-
-      // sectionEl.offsetHeight; -> not needed in requestAnimationFrame
-
       for (let i = index + 1; i < this._sections.length; i++) {
         const curr = this._sections[i];
 
         // trigger translation animation of adjacent sections and rest of the content now
-        curr.classList.remove("notransition");
         curr.classList.add(expand ? "expanded" : "collapsed");
         setTranslation(curr, {
           height: targetContentHeight,
           start: false,
           expand,
         });
-        sectionEl.offsetHeight; // needed for Firefox on expand
       }
-      lastSectionSibling.classList.remove("notransition");
+      
       lastSectionSibling.classList.add(expand ? "expanded" : "collapsed");
       setTranslation(lastSectionSibling, {
         height: targetContentHeight,
@@ -146,40 +154,40 @@ class Expando {
             for (let i = index + 1; i < this._sections.length; i++) {
               const curr = this._sections[i];
               // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
-              curr.classList.add("notransition");
-              // could also be set to translateY(0)
-              curr.removeAttribute("style");
-              curr.classList.remove("collapsed");
-              // should force reflow here otherwise there will be no net change in notransition class which would animate transform, which we don't want,
-              // we're just removing the unnecessary style attribute
-              sectionEl.offsetHeight;
-              curr.classList.remove("notransition");
+              runWithoutTransition(curr, (el) => {
+                // could also be set to translateY(0)
+                el.removeAttribute("style");
+                el.classList.remove("collapsed");
+              });
             }
 
-            lastSectionSibling.classList.add("notransition");
-            lastSectionSibling.removeAttribute("style");
-            lastSectionSibling.classList.remove("collapsed");
-            sectionEl.offsetHeight;
-            lastSectionSibling.classList.remove("notransition");
+            runWithoutTransition(lastSectionSibling, (el) => {
+              el.removeAttribute("style");
+              el.classList.remove("collapsed");
+            });
           },
           { once: true }
         );
       } else {
-        sectionContent.addEventListener("animationend", () => {
-          for (let i = index + 1; i < this._sections.length; i++) {
-            const curr = this._sections[i];
-            // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
-            curr.classList.add("notransition");
-            curr.classList.remove("expanded");
-            // should force reflow here otherwise there will be no net change in notransition class which would animate transform, which we don't want
-            sectionEl.offsetHeight;
-            curr.classList.remove("notransition");
-          }
-          lastSectionSibling.classList.add("notransition");
-          lastSectionSibling.classList.remove("expanded");
-          sectionEl.offsetHeight;
-          lastSectionSibling.classList.remove("notransition");
-        }, { once: true });
+        sectionContent.addEventListener(
+          "animationend",
+          () => {
+            for (let i = index + 1; i < this._sections.length; i++) {
+              const curr = this._sections[i];
+              // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
+              runWithoutTransition(curr, (el) => {
+                el.classList.add("notransition");
+                el.classList.remove("expanded");
+              });
+            }
+
+            runWithoutTransition(lastSectionSibling, (el) => {
+              el.classList.add("notransition");
+              el.classList.remove("expanded");
+            });
+          },
+          { once: true }
+        );
       }
     });
   }
