@@ -71,7 +71,6 @@ body {
     perspective: 1px;
     display: none;
     overflow: hidden;
-    padding-top: 0.5em;
 }
 
 .content-inner {
@@ -79,13 +78,14 @@ body {
     overflow: hidden;
     transform: scaleY(0);
     will-change: transform;
-    border: 1px solid black;
-    border-radius: 5px;
+    padding-top: 1rem;
 }
 
 /* need to be margin as with padding, transform makes it push to the top while animating collapse */
 .content-inner-spacer {
-    margin: 1em;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 1em;
 }
 
 .item--expanded {

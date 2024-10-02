@@ -4,7 +4,6 @@ class Expando {
   constructor() {
     this._el = document.querySelector(".content");
     const toggleEl = document.querySelectorAll(".section-header");
-    this._toggleBtn = document.querySelector(".toggle");
     this._sections = [...document.querySelectorAll(".expand-collapse-section")];
     this._isExpanded = new Array(this._sections.length).fill(false);
 
@@ -21,10 +20,10 @@ class Expando {
     });
 
     // measure single content element's margin-top (they all have the same margin in CSS)
-    const rgx = /(.+)px/;
-    const marginTopPx = window.getComputedStyle(this._el, null).marginTop;
-    const results = rgx.exec(marginTopPx);
-    this._contentTopMargin = +results[1] || 0;
+    // const rgx = /(.+)px/;
+    // const marginTopPx = window.getComputedStyle(this._el, null).marginTop;
+    // const results = rgx.exec(marginTopPx);
+    this._contentTopMargin = 0; // +results[1] || 0;
   }
 
   expand(el, sectionIdx) {
@@ -137,7 +136,7 @@ class Expando {
           expand,
         });
       }
-      
+
       lastSectionSibling.classList.add(expand ? "expanded" : "collapsed");
       setTranslation(lastSectionSibling, {
         height: targetContentHeight,
@@ -153,18 +152,13 @@ class Expando {
 
             for (let i = index + 1; i < this._sections.length; i++) {
               const curr = this._sections[i];
-              // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
-              runWithoutTransition(curr, (el) => {
-                // could also be set to translateY(0)
-                el.removeAttribute("style");
-                el.classList.remove("collapsed");
-              });
+              // could also be set to translateY(0)
+              curr.removeAttribute("style"); // won't cause any animations as we set display: none on section
+              curr.classList.remove("collapsed"); // won't cause any animations as it's one-way transition
             }
 
-            runWithoutTransition(lastSectionSibling, (el) => {
-              el.removeAttribute("style");
-              el.classList.remove("collapsed");
-            });
+            lastSectionSibling.removeAttribute("style");
+            lastSectionSibling.classList.remove("collapsed");
           },
           { once: true }
         );
@@ -174,17 +168,10 @@ class Expando {
           () => {
             for (let i = index + 1; i < this._sections.length; i++) {
               const curr = this._sections[i];
-              // avoid unexpected animations when removing transform inline style in the end of the animation, needs reflow
-              runWithoutTransition(curr, (el) => {
-                el.classList.add("notransition");
-                el.classList.remove("expanded");
-              });
+              curr.classList.remove("expanded"); // won't cause any animations as it's one-way transition
             }
 
-            runWithoutTransition(lastSectionSibling, (el) => {
-              el.classList.add("notransition");
-              el.classList.remove("expanded");
-            });
+            lastSectionSibling.classList.remove("expanded");
           },
           { once: true }
         );
